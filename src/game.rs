@@ -1,6 +1,5 @@
 use std::cmp::max;
 use std::collections::{HashMap, HashSet};
-use std::fmt::format;
 use std::iter::{Iterator, zip};
 use lazy_static::lazy_static;
 use rand::distributions::{Distribution, Uniform};
@@ -11,10 +10,9 @@ use rand::distributions::{Distribution, Uniform};
 // global variables
 // because performance
 // im sure there is a better way to do this
-static NUMS: [char; 10] = ['0', '1', '2', '3', '4', '5', '6', '7', '8', '9'];
-static OPERATORS: [char; 4] = ['+', '-', '*', '%'];
-static EQUALITY: char = '=';
-static CHARS: [char; 15] = ['0', '1', '2', '3', '4', '5', '6', '7', '8', '9', '+', '-', '*', '%', '='];
+pub static NUMS: [char; 10] = ['0', '1', '2', '3', '4', '5', '6', '7', '8', '9'];
+pub static OPERATORS: [char; 4] = ['+', '-', '*', '%'];
+pub static CHARS: [char; 15] = ['0', '1', '2', '3', '4', '5', '6', '7', '8', '9', '+', '-', '*', '%', '='];
 
 
 
@@ -165,22 +163,29 @@ pub struct ColorInfo {
 
 pub type AllInfo = Vec<Vec<ColorInfo>>;
 
-#[derive(Default)]
-struct InfoLookup {
-    correct: HashSet<usize>,
-    incorrect: HashSet<usize>,
-    min: usize,
-    max: usize,
+#[derive(Default, Debug)]
+pub struct InfoLookup {
+    pub correct: HashSet<usize>,
+    pub incorrect: HashSet<usize>,
+    pub min: usize,
+    pub max: usize,
 }
 
+#[derive(Debug)]
 pub struct InfoIndex {
-    lookup: HashMap<char, InfoLookup>,
+    pub lookup: HashMap<char, InfoLookup>,
 }
 
 impl InfoIndex {
+    pub fn new() -> InfoIndex {
+        InfoIndex {
+            lookup: HashMap::new()
+        }
+    }
+
     /// Returns the InfoIndex based on the given difficulty
     /// and info 2d array
-    fn build(difficulty: usize, info: &AllInfo) -> InfoIndex {
+    pub fn build(difficulty: usize, info: &AllInfo) -> InfoIndex {
         let mut lookup: HashMap<char, InfoLookup> = HashMap::new();
 
         // initiate table
@@ -366,7 +371,7 @@ pub fn passes_restrictions(
         let lookup = &index.lookup[key];
 
         for correct in lookup.correct.iter() {
-            if guess.chars().nth(*correct).unwrap() == *key {
+            if guess.chars().nth(*correct).unwrap() != *key {
                 return false;
             }
         }
@@ -389,9 +394,9 @@ pub fn passes_restrictions(
 
         // trim duplicates
         uniques_upperbound -= max(
-            0,
-            lookup.min - 1,
-        );
+            1,
+            lookup.min,
+        ) - 1;
     }
 
     // check if guess is too unique
@@ -459,7 +464,7 @@ pub fn set_colors(secret: &str, guess: &str) -> Vec<ColorInfo> {
 /// Returns a random valid focdle expression
 fn random_expression() -> String {
     // random number
-    let number_dist = Uniform::new(0, 100);
+    let number_dist = Uniform::new(1, 100);
     let mut rng = rand::thread_rng();
 
     let num1 = number_dist.sample(&mut rng);
@@ -483,7 +488,7 @@ pub fn create_secret(difficulty: usize) -> String {
         let expression = random_expression();
 
         let outcome = fast_eval(&expression);
-        if outcome.is_none() {
+        if outcome.is_none() || outcome.unwrap() <= 0 {
             continue;
         }
 

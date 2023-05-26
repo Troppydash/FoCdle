@@ -1,17 +1,14 @@
-use std::hint::black_box;
+use std::env;
 use std::time::Instant;
-use crate::game::AllInfo;
+use crate::game::{AllInfo};
 
 mod guesser;
 mod game;
 mod test;
 
 fn create_better_guess(info: &AllInfo, difficulty: usize) -> String {
-    if info.len() <= 1 {
-        return "0".repeat(difficulty);
-    }
-
-    return "1+1+1=3".to_owned();
+    let mut guesser = guesser::Guesser::new(difficulty, info);
+    guesser.create_guess()
 }
 
 fn benchmark() {
@@ -21,31 +18,18 @@ fn benchmark() {
 
         test::test(difficulty, create_better_guess);
 
-        println!("took {:?}\n", start.elapsed());
+        println!("took {:?} (for 1000 secrets, 100x each)\n", start.elapsed());
     }
-
-
-
 }
 
 
 
 fn main() {
-    benchmark();
-    // let now = Instant::now();
-    //
-    // for _ in 0..100000 {
-    //     let expression = "12%13%12".to_owned();
-    //     let result = guesser::fast_eval(&expression).unwrap_or(-1);
-    //     black_box(result);
-    // }
-    //
-    // let elapsed = now.elapsed();
-    // println!("took {:.2?}", elapsed);
-    // let secret = game::create_secret(10);
-    // println!("{}", secret);
-
-
-
-
+    // benchmark();
+    let args: Vec<String> = env::args().collect();
+    for arg in args[1..].iter() {
+        println!("secret {}:", arg);
+        test::test_once(arg, create_better_guess);
+        println!();
+    }
 }
